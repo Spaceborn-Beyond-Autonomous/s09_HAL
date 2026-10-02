@@ -1,0 +1,20 @@
+# CMake generated Testfile for 
+# Source directory: /home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa
+# Build directory: /home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build
+# 
+# This file includes the relevant testing commands required for 
+# testing this directory and lists subdirectories to be tested as well.
+add_test(null_backend_stub_test "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build/test_null_backend")
+set_tests_properties(null_backend_stub_test PROPERTIES  _BACKTRACE_TRIPLES "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/CMakeLists.txt;13;add_test;/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/CMakeLists.txt;0;")
+add_test(avhp_core_test "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build/test_avhp_core")
+set_tests_properties(avhp_core_test PROPERTIES  _BACKTRACE_TRIPLES "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/CMakeLists.txt;18;add_test;/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/CMakeLists.txt;0;")
+add_test(sensor_hal_shim_compile_test "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build/test_sensor_hal_shims")
+set_tests_properties(sensor_hal_shim_compile_test PROPERTIES  _BACKTRACE_TRIPLES "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/CMakeLists.txt;25;add_test;/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/CMakeLists.txt;0;")
+add_test(virtual_backend_compliance "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build/test_virtual_backend")
+set_tests_properties(virtual_backend_compliance PROPERTIES  _BACKTRACE_TRIPLES "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/CMakeLists.txt;32;add_test;/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/CMakeLists.txt;0;")
+add_test(icm42688_driver_test "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build/test_icm42688")
+set_tests_properties(icm42688_driver_test PROPERTIES  _BACKTRACE_TRIPLES "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/CMakeLists.txt;47;add_test;/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/CMakeLists.txt;0;")
+add_test(bmp388_driver_test "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build/test_bmp388")
+set_tests_properties(bmp388_driver_test PROPERTIES  _BACKTRACE_TRIPLES "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/CMakeLists.txt;47;add_test;/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/CMakeLists.txt;0;")
+add_test(hmc5883l_driver_test "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build/test_hmc5883l")
+set_tests_properties(hmc5883l_driver_test PROPERTIES  _BACKTRACE_TRIPLES "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/CMakeLists.txt;47;add_test;/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/CMakeLists.txt;0;")

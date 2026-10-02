@@ -1,0 +1,8 @@
+null_backend_stub_test 2 0.000509557
+avhp_core_test 2 0.000364012
+sensor_hal_shim_compile_test 2 0.000326009
+virtual_backend_compliance 2 0.000343836
+icm42688_driver_test 2 0.000347133
+bmp388_driver_test 2 0.000354866
+hmc5883l_driver_test 2 0.000516009
+---

@@ -1,0 +1,1 @@
+/usr/bin/cc -g CMakeFiles/test_hmc5883l.dir/tests/qemu_hmc5883l/main.c.o CMakeFiles/test_hmc5883l.dir/tests/qemu_hmc5883l/mock_hmc5883l_bus.c.o CMakeFiles/test_hmc5883l.dir/Drivers/HMC5883L/Src/hmc5883l.c.o -o test_hmc5883l  -lm 

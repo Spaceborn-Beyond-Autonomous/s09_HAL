@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ANSA S09 Validation Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">SPACEBORN • S09</div>
+      <h1>ANSA HAL Emulator</h1>
+      <p>Validation & Simulation Dashboard</p>
+    </div>
+    <div class="header-actions">
+      <span id="statusBadge" class="badge idle">READY</span>
+      <button id="runBtn" onclick="runValidation()">▶ Run Full Validation</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero card">
+      <div>
+        <div class="section-kicker">LIVE PIPELINE</div>
+        <h2 id="phase">Ready to validate the current repository</h2>
+        <p id="subphase">The dashboard executes <code>scripts/run_all_tests.sh</code>; results below are read from its real output.</p>
+      </div>
+      <div class="timer"><span id="elapsed">0.0s</span><small>elapsed</small></div>
+    </section>
+
+    <section class="grid metrics">
+      <article class="metric card"><span>CTest</span><strong id="ctest">—</strong><small>host C/C++ suite</small></article>
+      <article class="metric card"><span>Pytest</span><strong id="pytest">—</strong><small>peripheral verification</small></article>
+      <article class="metric card"><span>Bridge</span><strong id="bridge">—</strong><small>JSON-lines socket check</small></article>
+      <article class="metric card"><span>QEMU Build</span><strong id="qemu">—</strong><small>ARM firmware build</small></article>
+    </section>
+
+    <section class="grid two">
+      <article class="card">
+        <div class="card-head"><h3>Validation flow</h3><span class="muted">actual repository pipeline</span></div>
+        <div class="flow">
+          <div class="flow-row"><i id="f1"></i><b>1</b><span>CMake configure</span></div>
+          <div class="flow-row"><i id="f2"></i><b>2</b><span>Host build</span></div>
+          <div class="flow-row"><i id="f3"></i><b>3</b><span>CTest driver & backend suite</span></div>
+          <div class="flow-row"><i id="f4"></i><b>4</b><span>Python peripheral tests</span></div>
+          <div class="flow-row"><i id="f5"></i><b>5</b><span>Peripheral socket bridge</span></div>
+          <div class="flow-row"><i id="f6"></i><b>6</b><span>ARM/QEMU firmware build</span></div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head"><h3>Sensor simulation layer</h3><span class="muted">register models</span></div>
+        <div class="sensor"><div><b>ICM-42688-P</b><span>SPI • 0x75</span></div><strong>WHO_AM_I → 0x47</strong></div>
+        <div class="sensor"><div><b>BMP388</b><span>SPI/I²C • 0x00</span></div><strong>CHIP_ID → 0x50</strong></div>
+        <div class="sensor"><div><b>HMC5883L</b><span>I²C • 0x1E</span></div><strong>ID → H 4 3</strong></div>
+        <p class="note">These values come from the independent Python peripheral models and bridge checks, not from a physical sensor.</p>
+      </article>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h3>Execution log</h3><button class="ghost" onclick="clearLog()">Clear view</button></div>
+      <pre id="log">Waiting for a validation run…</pre>
+    </section>
+
+    <section class="card architecture">
+      <div class="card-head"><h3>Data flow</h3><span class="muted">S09 validation architecture</span></div>
+      <div class="architecture-flow">
+        <div class="node">Browser UI<br><small>HTML / JS / CSS</small></div><em>↕</em>
+        <div class="node">Dashboard Server<br><small>Python stdlib HTTP API</small></div><em>→</em>
+        <div class="node">run_all_tests.sh<br><small>existing test orchestrator</small></div><em>→</em>
+        <div class="node">CMake + CTest<br><small>7 host tests</small></div><em>+</em>
+        <div class="node">pytest + bridge<br><small>peripheral models</small></div>
+      </div>
+      <div class="boundary"><b>QEMU boundary:</b> the ARM build is verified by the pipeline when the ARM toolchain and QEMU are installed. The dashboard does not claim that stock QEMU contains physical ICM-42688/BMP388/HMC5883L models.</div>
+    </section>
+  </main>
+  <footer>ANSA S09 • local-only validation dashboard • no external dependencies</footer>
+  <script src="/app.js"></script>
+</body>
+</html>

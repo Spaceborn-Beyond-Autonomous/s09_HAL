@@ -1,0 +1,2 @@
+/usr/bin/ar qc libansa_null_backend.a CMakeFiles/ansa_null_backend.dir/backends/virtual/null/null_backend.c.o
+/usr/bin/ranlib libansa_null_backend.a

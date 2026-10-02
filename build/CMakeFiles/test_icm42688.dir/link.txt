@@ -1,0 +1,1 @@
+/usr/bin/cc -g CMakeFiles/test_icm42688.dir/tests/qemu_icm42688/main.c.o CMakeFiles/test_icm42688.dir/tests/qemu_icm42688/mock_icm42688_bus.c.o CMakeFiles/test_icm42688.dir/Drivers/ICM42688/Src/icm42688.c.o -o test_icm42688  -lm 

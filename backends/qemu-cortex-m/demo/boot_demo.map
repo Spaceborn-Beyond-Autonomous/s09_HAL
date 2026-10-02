@@ -1,0 +1,164 @@
+
+There are no discarded input sections
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+FLASH            0x08000000         0x00020000         xr
+RAM              0x20000000         0x00002000         xrw
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+LOAD /tmp/ccirwEKm.o
+LOAD /tmp/ccg79ST9.o
+LOAD /tmp/ccPzOKgq.o
+LOAD /tmp/ccPVgy1J.o
+
+.isr_vector     0x08000000       0x40
+ *(.isr_vector)
+ .isr_vector    0x08000000       0x40 /tmp/ccirwEKm.o
+
+.text           0x08000040      0xfbb
+ *(.text*)
+ .text          0x08000040        0x0 /tmp/ccirwEKm.o
+ .text.Reset_Handler
+                0x08000040       0x40 /tmp/ccirwEKm.o
+                0x08000040                Reset_Handler
+ .text.Default_Handler
+                0x08000080        0x4 /tmp/ccirwEKm.o
+                0x08000080                Default_Handler
+ .text          0x08000084      0x2e0 /tmp/ccg79ST9.o
+                0x08000084                SysTick_Handler
+                0x08000260                main
+ .text          0x08000364      0x194 /tmp/ccPzOKgq.o
+                0x0800039c                icm42688_baremetal_bus_setup
+                0x0800042c                ICM42688_BusRead
+                0x08000490                ICM42688_BusWrite
+                0x080004c8                ICM42688_DelayMs
+ .text          0x080004f8      0x714 /tmp/ccPVgy1J.o
+                0x0800058e                ICM42688_Init
+                0x080006ac                ICM42688_DeInit
+                0x08000706                ICM42688_ReadDeviceID
+                0x08000752                ICM42688_Reset
+                0x08000796                ICM42688_ReadData
+                0x08000886                ICM42688_SetAccelFS
+                0x080008e2                ICM42688_SetGyroFS
+                0x0800093e                ICM42688_FifoEnable
+                0x08000992                ICM42688_FifoDisable
+                0x080009e6                ICM42688_FifoGetCount
+                0x08000a60                ICM42688_FifoRead
+ *(.rodata*)
+ .rodata        0x08000c0c      0x3ef /tmp/ccg79ST9.o
+                0x08000ffb                        _sidata = LOADADDR (.data)
+
+.glue_7         0x08000ffc        0x0
+ .glue_7        0x08000ffc        0x0 linker stubs
+
+.glue_7t        0x08000ffc        0x0
+ .glue_7t       0x08000ffc        0x0 linker stubs
+
+.vfp11_veneer   0x08000ffc        0x0
+ .vfp11_veneer  0x08000ffc        0x0 linker stubs
+
+.v4_bx          0x08000ffc        0x0
+ .v4_bx         0x08000ffc        0x0 linker stubs
+
+.iplt           0x08000ffc        0x0
+ .iplt          0x08000ffc        0x0 /tmp/ccirwEKm.o
+
+.rel.dyn        0x08000ffc        0x0
+ .rel.iplt      0x08000ffc        0x0 /tmp/ccirwEKm.o
+
+.data           0x20000000        0x0 load address 0x08000ffb
+                0x20000000                        _sdata = .
+ *(.data*)
+ .data          0x20000000        0x0 /tmp/ccirwEKm.o
+ .data          0x20000000        0x0 /tmp/ccg79ST9.o
+ .data          0x20000000        0x0 /tmp/ccPzOKgq.o
+ .data          0x20000000        0x0 /tmp/ccPVgy1J.o
+                0x20000000                        _edata = .
+
+.igot.plt       0x20000000        0x0 load address 0x08000ffb
+ .igot.plt      0x20000000        0x0 /tmp/ccirwEKm.o
+
+.bss            0x20000000       0x18 load address 0x08000ffb
+                0x20000000                        _sbss = .
+ *(.bss*)
+ .bss           0x20000000        0x0 /tmp/ccirwEKm.o
+ .bss           0x20000000       0x18 /tmp/ccg79ST9.o
+                0x20000000                g_systick_ms
+ .bss           0x20000018        0x0 /tmp/ccPzOKgq.o
+ .bss           0x20000018        0x0 /tmp/ccPVgy1J.o
+ *(COMMON)
+                0x20000018                        _ebss = .
+                0x20002000                        _estack = (ORIGIN (RAM) + LENGTH (RAM))
+OUTPUT(boot_demo.elf elf32-littlearm)
+LOAD linker stubs
+
+.ARM.attributes
+                0x00000000       0x2f
+ .ARM.attributes
+                0x00000000       0x21 /tmp/ccirwEKm.o
+ .ARM.attributes
+                0x00000021       0x2d /tmp/ccg79ST9.o
+ .ARM.attributes
+                0x0000004e       0x2d /tmp/ccPzOKgq.o
+ .ARM.attributes
+                0x0000007b       0x2d /tmp/ccPVgy1J.o
+
+.comment        0x00000000       0x26
+ .comment       0x00000000       0x26 /tmp/ccg79ST9.o
+                                 0x27 (size before relaxing)
+ .comment       0x00000026       0x27 /tmp/ccPzOKgq.o
+ .comment       0x00000026       0x27 /tmp/ccPVgy1J.o
+
+.debug_line     0x00000000      0x751
+ .debug_line    0x00000000       0x6f /tmp/ccirwEKm.o
+ .debug_line    0x0000006f      0x192 /tmp/ccg79ST9.o
+ .debug_line    0x00000201      0x153 /tmp/ccPzOKgq.o
+ .debug_line    0x00000354      0x3fd /tmp/ccPVgy1J.o
+
+.debug_line_str
+                0x00000000       0x7c
+ .debug_line_str
+                0x00000000       0x7c /tmp/ccirwEKm.o
+
+.debug_info     0x00000000      0xbd3
+ .debug_info    0x00000000       0x23 /tmp/ccirwEKm.o
+ .debug_info    0x00000023      0x333 /tmp/ccg79ST9.o
+ .debug_info    0x00000356      0x1e7 /tmp/ccPzOKgq.o
+ .debug_info    0x0000053d      0x696 /tmp/ccPVgy1J.o
+
+.debug_abbrev   0x00000000      0x49d
+ .debug_abbrev  0x00000000       0x12 /tmp/ccirwEKm.o
+ .debug_abbrev  0x00000012      0x1c5 /tmp/ccg79ST9.o
+ .debug_abbrev  0x000001d7      0x13a /tmp/ccPzOKgq.o
+ .debug_abbrev  0x00000311      0x18c /tmp/ccPVgy1J.o
+
+.debug_aranges  0x00000000       0x88
+ .debug_aranges
+                0x00000000       0x28 /tmp/ccirwEKm.o
+ .debug_aranges
+                0x00000028       0x20 /tmp/ccg79ST9.o
+ .debug_aranges
+                0x00000048       0x20 /tmp/ccPzOKgq.o
+ .debug_aranges
+                0x00000068       0x20 /tmp/ccPVgy1J.o
+
+.debug_str      0x00000000      0x692
+ .debug_str     0x00000000      0x692 /tmp/ccirwEKm.o
+                                 0x88 (size before relaxing)
+ .debug_str     0x00000692      0x454 /tmp/ccg79ST9.o
+ .debug_str     0x00000692      0x239 /tmp/ccPzOKgq.o
+ .debug_str     0x00000692      0x5da /tmp/ccPVgy1J.o
+
+.debug_rnglists
+                0x00000000       0x19
+ .debug_rnglists
+                0x00000000       0x19 /tmp/ccirwEKm.o
+
+.debug_frame    0x00000000      0x44c
+ .debug_frame   0x00000000      0x12c /tmp/ccg79ST9.o
+ .debug_frame   0x0000012c      0x108 /tmp/ccPzOKgq.o
+ .debug_frame   0x00000234      0x218 /tmp/ccPVgy1J.o

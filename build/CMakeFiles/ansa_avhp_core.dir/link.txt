@@ -1,0 +1,2 @@
+/usr/bin/ar qc libansa_avhp_core.a CMakeFiles/ansa_avhp_core.dir/avhp/core/memory.c.o CMakeFiles/ansa_avhp_core.dir/avhp/core/interrupts.c.o CMakeFiles/ansa_avhp_core.dir/avhp/core/clock.c.o CMakeFiles/ansa_avhp_core.dir/avhp/core/boot.c.o
+/usr/bin/ranlib libansa_avhp_core.a

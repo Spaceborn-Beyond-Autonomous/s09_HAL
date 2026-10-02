@@ -1,0 +1,2 @@
+/usr/bin/ar qc libs09_sensor_hal.a "CMakeFiles/s09_sensor_hal.dir/s09-hal/s09_sensor_hal.c.o"
+/usr/bin/ranlib libs09_sensor_hal.a

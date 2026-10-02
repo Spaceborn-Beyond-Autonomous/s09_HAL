@@ -1,0 +1,1 @@
+/usr/bin/cc -g CMakeFiles/test_virtual_backend.dir/tests/virtual/test_virtual_backend.c.o -o test_virtual_backend  libansa_virtual_backend.a -lm 

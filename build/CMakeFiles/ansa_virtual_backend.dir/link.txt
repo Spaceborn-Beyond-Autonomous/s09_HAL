@@ -1,0 +1,2 @@
+/usr/bin/ar qc libansa_virtual_backend.a CMakeFiles/ansa_virtual_backend.dir/backends/virtual/virtual_backend.c.o
+/usr/bin/ranlib libansa_virtual_backend.a

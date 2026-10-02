@@ -1,0 +1,1 @@
+/usr/bin/cc -g CMakeFiles/test_avhp_core.dir/tests/avhp_core/test_avhp_core.c.o -o test_avhp_core  libansa_avhp_core.a 

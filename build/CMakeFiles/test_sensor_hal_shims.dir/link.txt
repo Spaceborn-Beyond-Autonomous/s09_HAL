@@ -1,0 +1,1 @@
+/usr/bin/cc -g CMakeFiles/test_sensor_hal_shims.dir/tests/virtual/test_sensor_hal_shims.c.o -o test_sensor_hal_shims  libs09_sensor_hal.a 

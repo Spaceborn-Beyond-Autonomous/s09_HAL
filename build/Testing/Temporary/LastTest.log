@@ -1,0 +1,197 @@
+Start testing: Oct 03 02:27 IST
+----------------------------------------------------------
+1/7 Testing: null_backend_stub_test
+1/7 Test: null_backend_stub_test
+Command: "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build/test_null_backend"
+Directory: /home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build
+"null_backend_stub_test" start time: Oct 03 02:27 IST
+Output:
+----------------------------------------------------------
+PASS: all HAL headers link and null-backend stubs behave as expected (13/13 headers)
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"null_backend_stub_test" end time: Oct 03 02:27 IST
+"null_backend_stub_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/7 Testing: avhp_core_test
+2/7 Test: avhp_core_test
+Command: "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build/test_avhp_core"
+Directory: /home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build
+"avhp_core_test" start time: Oct 03 02:27 IST
+Output:
+----------------------------------------------------------
+PASS: AVHP core memory/interrupt/clock/boot tests
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"avhp_core_test" end time: Oct 03 02:27 IST
+"avhp_core_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/7 Testing: sensor_hal_shim_compile_test
+3/7 Test: sensor_hal_shim_compile_test
+Command: "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build/test_sensor_hal_shims"
+Directory: /home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build
+"sensor_hal_shim_compile_test" start time: Oct 03 02:27 IST
+Output:
+----------------------------------------------------------
+PASS: S09 sensor HAL shim interface compiles
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"sensor_hal_shim_compile_test" end time: Oct 03 02:27 IST
+"sensor_hal_shim_compile_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/7 Testing: virtual_backend_compliance
+4/7 Test: virtual_backend_compliance
+Command: "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build/test_virtual_backend"
+Directory: /home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build
+"virtual_backend_compliance" start time: Oct 03 02:27 IST
+Output:
+----------------------------------------------------------
+PASS: virtual peripheral HAL compliance smoke tests
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"virtual_backend_compliance" end time: Oct 03 02:27 IST
+"virtual_backend_compliance" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/7 Testing: icm42688_driver_test
+5/7 Test: icm42688_driver_test
+Command: "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build/test_icm42688"
+Directory: /home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build
+"icm42688_driver_test" start time: Oct 03 02:27 IST
+Output:
+----------------------------------------------------------
+=== ICM-42688-P QEMU/host driver test suite ===
+
+test_init_happy_path:
+  [PASS] Init() returns ICM42688_OK
+  [PASS] handle marked initialized after Init()
+  [PASS] WHO_AM_I reads back 0x47
+test_init_null_handle:
+  [PASS] Init(NULL) rejected as invalid param
+test_init_wrong_device_id:
+  [PASS] Init() detects WHO_AM_I mismatch
+  [PASS] handle stays uninitialized after failed Init()
+test_read_data_before_init:
+  [PASS] ReadData() before Init() is rejected
+test_read_data_changes_across_reads:
+  [PASS] two consecutive ReadData() calls succeed
+  [PASS] sample data is not a static/frozen value across reads
+  [PASS] accel Z sample is plausibly near +1 g at rest
+test_bus_fault_propagation:
+  [PASS] Init() propagates a bus fault as ICM42688_ERROR_BUS
+  [PASS] fault_count increments on a bus error
+test_deinit_sleeps_device:
+  [PASS] DeInit() returns ICM42688_OK
+  [PASS] handle no longer marked initialized after DeInit()
+  [PASS] ReadData() rejected after DeInit()
+test_fifo_lifecycle:
+  [PASS] FifoEnable() succeeds
+  [PASS] handle reflects FIFO enabled
+  [PASS] FIFO count grows after ticks
+  [PASS] FifoRead() succeeds
+  [PASS] FifoRead() drains at least one packet
+  [PASS] FIFO count decreases after draining
+  [PASS] FifoDisable() clears fifo_enabled
+test_set_full_scale_ranges:
+  [PASS] SetAccelFS() updates the handle's active range
+  [PASS] SetGyroFS() updates the handle's active range
+
+=== 24/24 checks passed ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"icm42688_driver_test" end time: Oct 03 02:27 IST
+"icm42688_driver_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/7 Testing: bmp388_driver_test
+6/7 Test: bmp388_driver_test
+Command: "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build/test_bmp388"
+Directory: /home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build
+"bmp388_driver_test" start time: Oct 03 02:27 IST
+Output:
+----------------------------------------------------------
+=== BMP388 QEMU/host driver test suite ===
+
+test_init_happy_path:
+  [PASS] Init() returns BMP388_OK
+  [PASS] handle marked initialized after Init()
+  [PASS] calibration block loaded during Init()
+  [PASS] CHIP_ID reads back 0x50
+test_init_null_handle:
+  [PASS] Init(NULL) rejected as invalid param
+test_init_wrong_device_id:
+  [PASS] Init() detects CHIP_ID mismatch
+  [PASS] handle stays uninitialized after failed Init()
+test_read_data_before_init:
+  [PASS] ReadData() before Init() is rejected
+test_read_data_plausible_and_changing:
+  [PASS] two ReadData() calls (with a tick between) succeed
+  [PASS] sample data is not a static/frozen value across reads
+  [PASS] compensated pressure is plausibly near sea level (~101.3 kPa)
+  [PASS] compensated temperature is plausibly room temperature
+test_data_ready_handshake:
+  [PASS] first ReadData() after Init() succeeds
+  [PASS] ReadData() reports NOT_READY when DRDY bits are clear
+  [PASS] ReadData() succeeds again once DRDY is set by a tick
+test_bus_fault_propagation:
+  [PASS] Init() propagates a bus fault as BMP388_ERROR_BUS
+  [PASS] fault_count increments on a bus error
+test_deinit_sleeps_device:
+  [PASS] DeInit() returns BMP388_OK
+  [PASS] handle no longer marked initialized after DeInit()
+  [PASS] ReadData() rejected after DeInit()
+test_set_oversampling:
+  [PASS] SetOversampling() returns BMP388_OK
+  [PASS] handle reflects the newly requested oversampling
+
+=== 22/22 checks passed ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"bmp388_driver_test" end time: Oct 03 02:27 IST
+"bmp388_driver_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/7 Testing: hmc5883l_driver_test
+7/7 Test: hmc5883l_driver_test
+Command: "/home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build/test_hmc5883l"
+Directory: /home/cbarodiya/S09_ANSA_HAL_Emulator_COMPLETE_WITH_DASHBOARD/ANSA_S09_HAL_EMULATOR_COMPLETE/HAL EMULATOR/ansa/build
+"hmc5883l_driver_test" start time: Oct 03 02:27 IST
+Output:
+----------------------------------------------------------
+=====================================================
+STARTING HOST-SIDE HMC5883L DRIVER UNIT TEST SUITE
+=====================================================
+  [RUN] test_initialization_happy_path... [PASS]
+  [RUN] test_initialization_invalid_parameters... [PASS]
+  [RUN] test_initialization_chip_id_mismatch... [PASS]
+  [RUN] test_data_decode_revolving_fields... [PASS]
+  [RUN] test_self_test_verification_happy_path... [PASS]
+  [RUN] test_self_test_verification_failure_path... [PASS]
+  [RUN] test_bus_error_fault_propagation... [PASS]
+=====================================================
+ALL TESTS COMPLETED SUCCESSFULLY: [PASS]
+=====================================================
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"hmc5883l_driver_test" end time: Oct 03 02:27 IST
+"hmc5883l_driver_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 03 02:27 IST
