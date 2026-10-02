@@ -1,266 +1,767 @@
 # ANSA / AVHP — ANSA Virtual Hardware Platform
 
-Implements Stage 0 (architecture/ADRs) and Stage 1 (HAL interfaces +
-null backend) of `S09-AVHP-ROADMAP-001`. See `docs/architecture.md` for
-the full picture and `docs/adr/` for the binding decisions.
+**ANSA Virtual Hardware Platform (AVHP)** is a software-based Hardware Abstraction Layer (HAL) and hardware-emulation foundation for embedded and autonomous systems.
 
-## Quick start
+The platform provides a common software interface between application/driver code and the underlying hardware implementation. This allows hardware-facing software to be developed, tested and validated using software backends before deployment on physical hardware.
 
-```sh
-# Compile-and-link check (no build system required):
-gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Ihal -Ibackends/virtual/null \
-  -c backends/virtual/null/null_backend.c -o /tmp/null_backend.o
-gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Ihal -Ibackends/virtual/null \
-  tests/unit/test_null_backend.c /tmp/null_backend.o -o /tmp/test_null_backend
-/tmp/test_null_backend
+The repository combines:
 
-# Or, with CMake:
-mkdir build && cd build
-cmake ..
-cmake --build .
-ctest --output-on-failure
+* Standardized HAL interfaces
+* Virtual and null hardware backends
+* Sensor drivers
+* Host-side hardware simulation
+* Cortex-M firmware execution through QEMU
+* Python-based peripheral models
+* Automated validation and regression testing
+* Socket-based peripheral verification
+* Documentation and architectural decision records
+
+The concrete S09 implementation focuses on the flight-sensor driver stack while establishing the Stage 0–4 AVHP foundation.
+
+---
+
+# 1. Project Objective
+
+The primary objective of ANSA/AVHP is to reduce direct dependency on physical hardware during embedded-system development.
+
+A typical embedded application communicates directly with hardware peripherals such as:
+
+```text
+Application
+    │
+    ▼
+Sensor Driver
+    │
+    ▼
+HAL / Bus Interface
+    │
+    ▼
+Hardware Peripheral
 ```
 
-Both should print:
-```
-PASS: all HAL headers link and null-backend stubs behave as expected (13/13 headers)
-```
+With AVHP, the hardware implementation can be replaced by a software backend:
 
-## Repository layout
-
-```
-ansa/
-  hal/                    Stage 1 — pure HAL interfaces (13 headers, zero
-                           vendor-specific types; see ADR-001)
-  avhp/
-    core/                 Stage 2 — virtual CPU/memory/interrupt substrate
-    peripherals/          Stage 3 — VirtualGPIO/UART/SPI/... implementations
-  backends/
-    virtual/
-      null/               Stage 1 — null backend: stub, link-only smoke test
-    qemu-cortex-m/         Stage 4 (also holds the S09 boot demo — see
-                           "Sensor drivers" below)
-    stm32f7/                Stage 10
-    stm32h7/                 Stage 11
-    esp32/ rp2040/ linux/     Stage 13
-    raspberry-pi/ jetson/      Stage 13
-    rk3588/                     Stage 13
-    ansa-nano/                   Stage 16
-  sensors/                Stage 5 — Virtual Sensor API (GPS/IMU/baro/...)
-  Drivers/                S09 project-plan scope — see "Sensor drivers" below
-  peripheral-sim/         S09 project-plan scope — Python HAL verification
-                           layer, see "Sensor drivers" below
-  fault-injection/        Stage 8
-  telemetry/               Stage 9
-  mission-runtime/          Stage 6 — FSM, scheduler, control logic, safety
-  compute-manager/           Stage 14 — CPU/GPU/NPU/DSP/FPGA task abstraction
-  certification/               Stage 15 — OEM certification pipeline
-  tests/
-    hal_compliance/       Stage 3 onward — behavioral compliance suite,
-                           run against every registered backend
-    unit/                 Stage 1 — test_null_backend.c (this repo's
-                           current exit-criteria test)
-    integration/
-    qemu_icm42688/         S09 — see "Sensor drivers" below
-    qemu_bmp388/            S09
-    qemu_hmc5883l/          S09
-  docs/
-    adr/                  ADR-001..004 (full text)
-    architecture.md        Stage 0 canonical architecture reference
-    coding-standards.md     Stage 0 deliverable
-    hal-compliance-checklist.md   Stage 1 deliverable / Stage 15 seed
-    backend-limitations/    One file per backend (populated from Stage 4
-                             onward)
-  .github/workflows/       CI skeleton (Stage 0 task: "set up CI skeleton")
+```text
+Application
+    │
+    ▼
+Sensor Driver
+    │
+    ▼
+HAL / Bus Interface
+    │
+    ├──────────────► Physical Hardware
+    │
+    ├──────────────► Virtual Backend
+    │
+    ├──────────────► Mock Backend
+    │
+    └──────────────► Simulated Peripheral
 ```
 
-## Sensor drivers (S09 project-plan scope)
+This allows the same driver architecture to be exercised in multiple environments.
 
-`Drivers/` implements the sensor-driver slice of `s09_project_plan.pdf`
-(QEMU Olimex STM32-P103 HAL emulator for the flight sensor stack), built to
-`DRIVER_STANDARD.md`. This is a narrower, concrete deliverable, not a claim
-that Stage 2+ of the full AVHP roadmap is done — see "Scope" below.
+---
 
-| Driver | Chip | Bus | Status |
-|---|---|---|---|
-| `Drivers/ICM42688` | ICM-42688-P (6-axis IMU) | SPI | New |
-| `Drivers/BMP388` | BMP388 (barometer) | SPI/I2C | New |
-| `Drivers/HMC5883L` | HMC5883L (magnetometer) | I2C | Retained (integrated from the existing submission, two functional bugs fixed — see below) |
+# 2. Why a HAL is Required
 
-**Run everything:**
-```sh
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
-cmake --build build
-ctest --test-dir build --output-on-failure
-```
-This builds and runs all four registered tests (Stage 1's null-backend test
-plus the three sensor drivers) exactly the way `.github/workflows/ci.yml`
-does. Each driver's `tests/qemu_<sensor>/` also builds standalone
-(`make run` — plain Makefile, no CMake needed; `tests/qemu_hmc5883l/` also
-still has its original `CMakeLists.txt`, fixed, as a second option).
+Hardware-specific code normally depends heavily on a particular microcontroller, peripheral controller or vendor SDK.
 
-**Architecture**, applied identically across all three:
-- Handle-based (`<Sensor>_Handle_t`), no static/global mutable driver state.
-- Bus-agnostic: driver `.c` files call only `<S>_BusRead` / `<S>_BusWrite` /
-  `<S>_DelayMs` (DRIVER_STANDARD.md Section 4). Exactly one implementation
-  of that contract is linked per binary — `<sensor>_bus_stm32.c` for real
-  hardware (gated behind an `_TARGET_STM32` macro so it's inert unless
-  explicitly built against STM32Cube HAL) or `mock_<sensor>_bus.c` for the
-  host/QEMU test.
-- Granular per-driver status enum (`ICM42688_Status_t`, `BMP388_Status_t`),
-  not a shared/generic ok-or-error type.
-- Register maps live in their own `<sensor>_registers.h`, Doxygen'd.
+For example, a sensor driver may need:
 
-**Known simplifications** (flagged here rather than presented as more
-precise than they are):
-- ICM-42688-P FIFO support (`ICM42688_FifoEnable/GetCount/Read`) models
-  `FIFO_CONFIG` / `FIFO_COUNTH` / `FIFO_COUNTL` / `FIFO_DATA` at their real
-  register addresses with a fixed 12-byte accel+gyro packet. The real chip
-  supports several selectable packet formats (8/16/20 bytes, optional
-  header + timestamp, via `FIFO_CONFIG1`, not modeled here).
-- BMP388's oversampling/ODR defaults (x8 pressure / x1 temperature, 25 Hz)
-  are a reasonable non-racing-airframe choice, not a value taken from a
-  specific integration spec — reconsider against the actual airframe's
-  vibration/update-rate needs before flight.
-- `mock_bmp388_bus.c`'s 21-byte calibration block is a synthetic-but-
-  internally-consistent trim set (generated by inverting `bmp388.c`'s own
-  `parse_calibration()` scale factors against target coefficients, not
-  copied from one physical unit) — decoding it through the real
-  compensation formula reproduces a plausible ~25 °C / ~101.3 kPa reading.
-  Swap in a real unit's calibration dump if bit-exact hardware behavior
-  needs to be reproduced.
+* SPI read/write operations
+* I2C read/write operations
+* GPIO control
+* delays
+* interrupt handling
+* clock access
 
-**HMC5883L integration fixes.** The retained submission's driver logic and
-register map were correct, but three bugs kept it from actually passing its
-own test suite or building via its own `CMakeLists.txt`:
-1. `HMC5883L_Init()` called `HMC5883L_Reset()` — which intentionally snaps
-   `handle->averaging/odr/bias/gain/mode` back to power-on defaults, to
-   mirror the real device post-reset — and then read those *just-defaulted*
-   fields when applying the caller's requested configuration, silently
-   discarding it. Fixed by capturing the caller's requested config into
-   locals before calling `Reset()`.
-2. `tests/qemu_hmc5883l/CMakeLists.txt` pointed at `../../drivers/mag/
-   hmc5883l/Inc` (wrong case, and the extra `mag/` nesting this repo drops
-   for consistency with the other two drivers) and at source files
-   (`test_hmc5883l-v2.c`, `mock_hmc5883l_bus-v2.c`) that don't exist in this
-   submission — it could not have built as committed. Paths and filenames
-   fixed; a plain `Makefile` (matching `DRIVER_STANDARD.md`'s literal ask)
-   is provided alongside it.
-3. `mock_hmc5883l_bus.c`'s self-test simulation (bias mode) always returned
-   the ideal datasheet excitation response regardless of
-   `mock_hmc5883l_set_static_field()`, so `test_self_test_verification_
-   failure_path` could never observe a failing self-test. Added a
-   `sim_self_test_override_active` flag so an explicit static-field
-   override also applies during self-test simulation.
+If these operations are directly implemented inside the sensor driver, moving the driver to another platform becomes difficult.
 
-Also fixed in passing: a doxygen comment in `hmc5883l_registers.h` was
-missing its closing `*/` and silently swallowed the next line, dropping
-the `HMC5883L_CRA_MA_2` macro (unused by the driver, so harmless, but worth
-not shipping); and a stray top-level `;` after the `DRIVER_REGISTER(...)`
-macro invocation (a `-Wpedantic` warning, not a bug).
+AVHP separates these responsibilities.
 
-**Also implemented (Engineer 1 + Engineer 2 workstreams):**
-- `backends/qemu-cortex-m/` — a real Cortex-M3 boot image (linker script,
-  startup assembly, vector table) running under QEMU, with
-  `Drivers/ICM42688/Src/icm42688.c` linked in **completely unmodified**
-  from the host-mock-tested version, talking to real (empirically-verified,
-  not assumed) SPI1 hardware registers. VS Code `launch.json`/`tasks.json`
-  for QEMU+GDB debugging, checked working end-to-end (breakpoints,
-  source-line stepping, variable inspection). Read that folder's own
-  README before trusting the output as more than it is — in particular,
-  QEMU has no machine named "Olimex STM32-P103" (checked directly), so
-  this targets the closest real match instead, and there is no emulated
-  chip on the other end of SPI1 to answer with real sensor data.
-- `peripheral-sim/peripheral_sim.py` — the Python-driven HAL verification
-  layer named in `s09_project_plan.pdf` §2: register-accurate, dependency-
-  free Python models of all three sensors (18 passing tests), including an
-  independent re-implementation of the BMP388 compensation formula for
-  cross-checking. Not wired to a live serial/QEMU bridge — see that
-  folder's README for exactly where that boundary sits.
+The driver knows **what hardware operation it needs**, while the HAL/backend determines **how that operation is performed**.
 
-**Scope — what this is not.** `S09 HAL SIMULATOR.pdf` describes an 18-stage
-(Stage 0–17), multi-team, multi-month roadmap for the full AVHP platform.
-This delivers the sensor-driver slice of the *3-engineer S09 project*
-(`s09_project_plan.pdf`) specifically — not Stage 2 onward of that larger
-roadmap. Still open, even within the S09 project's own scope:
-- A serial/named-pipe bridge actually connecting `peripheral_sim.py` to
-  the QEMU boot demo (or to real firmware) — the register models exist,
-  the transport doesn't.
-- BMP388 and HMC5883L wired into the QEMU boot image alongside the IMU —
-  BMP388 could reuse the existing SPI1 wiring; HMC5883L cannot, because
-  I2C1 is not usably modeled in this QEMU machine (see
-  `backends/qemu-cortex-m/README.md`).
-- Cycle-accurate timing on the QEMU target (`ICM42688_DelayMs()` there is
-  an uncalibrated busy-loop; no SysTick is configured).
+For example:
 
-
-## Current implementation status
-
-The repository now implements the concrete S09 project plan plus the Stage 0–4 MVP foundation:
-
-- [x] Stage 0 — architecture, ADRs, repository skeleton, coding standards, CI
-- [x] Stage 1 — 13 HAL interfaces, common status enum, null backend and compliance smoke test
-- [x] Stage 2 — host-native AVHP memory, interrupt, clock and boot substrate
-- [x] Stage 3 — reference virtual peripheral backend and compliance smoke tests
-- [x] Stage 4 foundation — Cortex-M boot image, VS Code/GDB setup, SPI1 register-level path and SysTick timing
-- [x] S09 sensor drivers — ICM-42688-P, BMP388 and HMC5883L with dedicated mock-bus suites
-- [x] Python peripheral verification — register models, BMP388 compensation cross-check and JSON-lines socket bridge
-- [x] Reproducible tooling — Docker definition and host regression script
-
-### Verification in the delivery environment
-
-`cmake --build build` and `ctest --test-dir build --output-on-failure` pass **7/7** tests. `pytest -q peripheral-sim/tests` passes **20/20** tests.
-
-The current delivery environment does not provide `arm-none-eabi-gcc` or `qemu-system-arm`, so the ARM cross-build/QEMU execution is intentionally reported as pending rather than falsely marked as verified. Run `scripts/run_all_tests.sh` on the target Ubuntu/VS Code workstation or inside the supplied Docker image.
-
-### Scope boundary
-
-The long-term AVHP roadmap contains Stages 5–17 beyond this concrete S09 deliverable. Those stages are not silently represented as completed. See `PROJECT_COMPLETION.md` for the exact boundary and verification record.
-
-## Recommended verification
-
-```sh
-./scripts/run_all_tests.sh
-
-# Or reproducibly:
-docker build -f docker/Dockerfile -t ansa-s09 .
-docker run --rm ansa-s09
+```text
+ICM42688 Driver
+       │
+       │ SPI Read / Write
+       ▼
+ICM42688 Bus Interface
+       │
+       ├── STM32 implementation
+       ├── Mock implementation
+       └── Virtual implementation
 ```
 
-## Validation and demonstration dashboard
+The driver therefore remains independent of the underlying hardware implementation.
 
-This repository includes a local, dependency-free web dashboard under `dashboard/`. The dashboard is intentionally an orchestration and visualization layer over the existing test pipeline; it does not replace the C/Python tests or manufacture PASS values.
+---
 
-### Option A — terminal validation
+# 3. High-Level Architecture
+
+The overall AVHP architecture is organized into several layers.
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    APPLICATION / SYSTEM                     │
+│        Mission Logic • Control • Runtime • Telemetry        │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                       SENSOR DRIVERS                        │
+│     ICM-42688-P • BMP388 • HMC5883L • Future Sensors       │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    SENSOR BUS INTERFACE                     │
+│          SPI Read/Write • I2C Read/Write • Delay            │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                         AVHP HAL                            │
+│       GPIO • UART • SPI • I2C • Timer • Clock • IRQ        │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                 ┌─────────────┼──────────────┐
+                 │             │              │
+                 ▼             ▼              ▼
+        ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+        │ Physical HW  │ │ Virtual HW   │ │ Mock / Test  │
+        │ Backend      │ │ Backend      │ │ Backend      │
+        └──────────────┘ └──────────────┘ └──────────────┘
+                 │             │              │
+                 ▼             ▼              ▼
+             MCU / Board    AVHP Model     Host Tests
+```
+
+The important design principle is that **upper layers should not need to know which backend is providing the hardware behavior**.
+
+---
+
+# 4. How ANSA/AVHP Works
+
+A typical sensor operation follows this path:
+
+```text
+Application
+     │
+     │ Request sensor data
+     ▼
+Sensor Driver
+     │
+     │ Sensor-specific register operation
+     ▼
+Sensor Bus Interface
+     │
+     │ SPI / I2C transaction
+     ▼
+AVHP HAL
+     │
+     ├──────── Physical backend
+     │
+     ├──────── Virtual backend
+     │
+     └──────── Mock / simulated backend
+     │
+     ▼
+Sensor / Virtual Peripheral
+     │
+     │ Register response
+     ▼
+Sensor Driver
+     │
+     │ Decode / compensate / validate
+     ▼
+Application
+```
+
+For example, an ICM-42688 WHO_AM_I request can be conceptually represented as:
+
+```text
+ICM42688_Init()
+      │
+      ▼
+ICM42688 Bus Read
+      │
+      ▼
+SPI HAL
+      │
+      ▼
+Backend
+      │
+      ▼
+WHO_AM_I Register
+      │
+      ▼
+0x47
+      │
+      ▼
+ICM42688 Driver
+      │
+      ▼
+Initialization successful
+```
+
+The same driver logic can therefore be tested without requiring the physical sensor.
+
+---
+
+# 5. Repository Structure
+
+```text
+s09_HAL/
+│
+├── hal/
+│   └── Stage 1 HAL interfaces
+│
+├── avhp/
+│   └── core/
+│       └── Virtual CPU / memory / interrupt foundation
+│
+├── backends/
+│   ├── virtual/
+│   │   └── null/
+│   │       └── Null HAL backend
+│   │
+│   └── qemu-cortex-m/
+│       └── Cortex-M firmware / QEMU environment
+│
+├── Drivers/
+│   ├── ICM42688/
+│   ├── BMP388/
+│   └── HMC5883L/
+│
+├── sensors/
+│   └── Virtual Sensor API
+│
+├── peripheral-sim/
+│   └── Python sensor peripheral models
+│
+├── tests/
+│   ├── unit/
+│   ├── integration/
+│   ├── virtual/
+│   ├── qemu_icm42688/
+│   ├── qemu_bmp388/
+│   └── qemu_hmc5883l/
+│
+├── scripts/
+│   ├── regression.py
+│   ├── run_all_tests.sh
+│   └── qemu_machine_survey.sh
+│
+├── docs/
+│   ├── architecture.md
+│   ├── adr/
+│   └── coding-standards.md
+│
+├── mission-runtime/
+├── compute-manager/
+├── telemetry/
+├── fault-injection/
+├── certification/
+│
+├── CMakeLists.txt
+├── PROJECT_COMPLETION.md
+└── README.md
+```
+
+The repository contains the broader AVHP architecture as well as the concrete S09 sensor-driver implementation.
+
+---
+
+# 6. HAL Layer
+
+The `hal/` directory contains the platform-independent hardware interfaces.
+
+The HAL is designed to prevent higher-level software from depending directly on vendor-specific types or implementation details.
+
+The Stage 1 HAL contains **13 interfaces** covering the basic hardware abstraction required by the platform.
+
+The fundamental concept is:
+
+```text
+HAL Interface
+     │
+     ▼
+Backend Implementation
+     │
+     ▼
+Actual / Virtual Hardware
+```
+
+A backend can therefore implement the same interface for different execution environments.
+
+---
+
+# 7. Null Backend
+
+The repository includes a null backend under:
+
+```text
+backends/virtual/null/
+```
+
+The null backend provides a minimal implementation used to verify that the HAL interfaces:
+
+* compile correctly
+* link correctly
+* expose the expected API
+* behave safely as stubs
+
+It is primarily a structural and integration smoke test rather than a hardware simulator.
+
+---
+
+# 8. Sensor Driver Architecture
+
+The S09 sensor-driver implementation contains three sensors:
+
+| Driver             | Sensor                 | Interface |
+| ------------------ | ---------------------- | --------- |
+| `Drivers/ICM42688` | ICM-42688-P 6-axis IMU | SPI       |
+| `Drivers/BMP388`   | BMP388 Barometer       | SPI / I2C |
+| `Drivers/HMC5883L` | HMC5883L Magnetometer  | I2C       |
+
+All three drivers follow the same general design philosophy.
+
+```text
+Application
+     │
+     ▼
+Sensor Driver
+     │
+     ├── Register definitions
+     ├── Configuration
+     ├── Initialization
+     ├── Data acquisition
+     └── Sensor-specific processing
+     │
+     ▼
+Bus abstraction
+     │
+     ├── BusRead
+     ├── BusWrite
+     └── DelayMs
+     │
+     ▼
+Backend
+```
+
+---
+
+# 9. Handle-Based Driver Design
+
+The sensor drivers use handle-based APIs.
+
+For example:
+
+```text
+<Sensor>_Handle_t
+```
+
+This avoids relying on mutable global driver state.
+
+A handle contains the state required by a particular sensor instance.
+
+Conceptually:
+
+```text
+Sensor Handle
+├── Configuration
+├── Device state
+├── Bus context
+└── Runtime information
+```
+
+This makes the driver architecture easier to reuse and test.
+
+---
+
+# 10. Bus Abstraction
+
+The sensor `.c` files do not directly depend on a particular SPI or I2C implementation.
+
+Instead, they communicate through the sensor-specific bus contract:
+
+```text
+<Sensor>_BusRead()
+<Sensor>_BusWrite()
+<Sensor>_DelayMs()
+```
+
+For example:
+
+```text
+ICM42688 Driver
+      │
+      ├── ICM42688_BusRead()
+      ├── ICM42688_BusWrite()
+      └── ICM42688_DelayMs()
+```
+
+The same driver can then be connected to different bus implementations.
+
+```text
+                 ┌── STM32 hardware bus
+                 │
+Driver ── Bus ───┼── Host mock bus
+                 │
+                 └── Simulated peripheral
+```
+
+This is one of the key mechanisms that makes the project hardware-independent.
+
+---
+
+# 11. Using the HAL for New Hardware
+
+A new hardware device can follow the same architecture.
+
+### Step 1 — Define the device interface
+
+Create a device-specific driver API:
+
+```text
+Device_Handle_t
+Device_Init()
+Device_Read()
+Device_Write()
+Device_GetData()
+```
+
+### Step 2 — Define the register map
+
+Keep device registers in a dedicated header:
+
+```text
+device_registers.h
+```
+
+### Step 3 — Define the bus contract
+
+The driver should use abstract operations:
+
+```text
+Device_BusRead()
+Device_BusWrite()
+Device_DelayMs()
+```
+
+### Step 4 — Implement the driver
+
+The driver contains:
+
+* initialization
+* configuration
+* register operations
+* data conversion
+* status handling
+* device-specific logic
+
+### Step 5 — Implement a backend
+
+Depending on the target:
+
+```text
+Physical hardware
+        OR
+Host mock
+        OR
+Virtual peripheral
+```
+
+### Step 6 — Add tests
+
+The same driver should be validated using a controlled backend before physical deployment.
+
+---
+
+# 12. Python Peripheral Simulation
+
+The directory:
+
+```text
+peripheral-sim/
+```
+
+contains Python-based register-level models for the S09 sensors.
+
+The models currently cover:
+
+```text
+ICM-42688-P
+BMP388
+HMC5883L
+```
+
+The Python layer is useful when the goal is to test peripheral behavior without requiring the actual sensor IC.
+
+Conceptually:
+
+```text
+Sensor Driver
+      │
+      ▼
+Bus Transaction
+      │
+      ▼
+Python Peripheral Model
+      │
+      ▼
+Register Response
+```
+
+The BMP388 model also includes an independent implementation of the compensation calculation for cross-checking the driver behavior.
+
+---
+
+# 13. Socket-Based Peripheral Verification
+
+The peripheral simulation layer also provides a JSON-lines socket transport.
+
+The verification flow is:
+
+```text
+Test / Client
+     │
+     │ JSON request
+     ▼
+Socket Bridge
+     │
+     ▼
+Python Peripheral Model
+     │
+     ▼
+Register Response
+     │
+     ▼
+JSON Response
+```
+
+The current regression test verifies representative sensor identities:
+
+```text
+ICM-42688-P
+WHO_AM_I → 0x47
+
+BMP388
+CHIP_ID → 0x50
+
+HMC5883L
+ID → H 4 3
+```
+
+This transport is a verification mechanism for the Python peripheral layer.
+
+It should not be interpreted as a claim that these sensor models are physically attached to the QEMU machine.
+
+---
+
+# 14. Cortex-M and QEMU
+
+The project also contains a Cortex-M firmware environment:
+
+```text
+backends/qemu-cortex-m/
+```
+
+It provides:
+
+* linker script
+* startup assembly
+* vector table
+* Cortex-M firmware image
+* QEMU execution
+* GDB debugging configuration
+
+The firmware includes the actual:
+
+```text
+Drivers/ICM42688/Src/icm42688.c
+```
+
+driver implementation.
+
+The driver is compiled into the embedded firmware rather than being replaced with a simplified demonstration implementation.
+
+---
+
+# 15. QEMU Data Flow
+
+The QEMU execution path is different from the Python peripheral simulation path.
+
+```text
+Cortex-M Firmware
+       │
+       ▼
+Application / main()
+       │
+       ▼
+ICM-42688 Driver
+       │
+       ▼
+SPI1 Registers
+       │
+       ▼
+QEMU Machine
+       │
+       ▼
+Virtual MCU
+```
+
+The current QEMU machine provides the CPU and MCU environment, but the stock machine does **not** provide an emulated ICM-42688 sensor connected to SPI1.
+
+Therefore:
+
+```text
+QEMU
+  =
+CPU / firmware execution environment
+
+Python peripheral simulator
+  =
+Register-level sensor simulation
+```
+
+These are complementary parts of the project, not the same simulation layer.
+
+---
+
+# 16. What Can Be Tested Without Physical Hardware?
+
+A major purpose of the platform is to allow development before hardware availability.
+
+Without physical sensors, the project can validate:
+
+### Software architecture
+
+```text
+HAL interfaces
+Driver APIs
+Backend contracts
+```
+
+### Driver behavior
+
+```text
+Initialization
+Register access
+Configuration
+Data conversion
+Error handling
+```
+
+### Sensor models
+
+```text
+Register responses
+Device identity
+Calibration behavior
+Compensation calculations
+```
+
+### Embedded execution
+
+```text
+Cortex-M startup
+Firmware linking
+Driver integration
+SPI register access
+GDB debugging
+```
+
+### Automated validation
+
+```text
+CMake
+CTest
+Pytest
+Socket bridge
+Regression scripts
+```
+
+Physical hardware is still required for final hardware-level validation.
+
+---
+
+# 17. Complete Development Flow
+
+A typical development workflow is:
+
+```text
+        ┌─────────────────────┐
+        │ Design HAL Interface│
+        └──────────┬──────────┘
+                   ▼
+        ┌─────────────────────┐
+        │ Implement Driver    │
+        └──────────┬──────────┘
+                   ▼
+        ┌─────────────────────┐
+        │ Implement Mock Bus  │
+        └──────────┬──────────┘
+                   ▼
+        ┌─────────────────────┐
+        │ Host Driver Tests   │
+        └──────────┬──────────┘
+                   ▼
+        ┌─────────────────────┐
+        │ Peripheral Model    │
+        └──────────┬──────────┘
+                   ▼
+        ┌─────────────────────┐
+        │ QEMU Firmware Build │
+        └──────────┬──────────┘
+                   ▼
+        ┌─────────────────────┐
+        │ GDB / Embedded Test │
+        └──────────┬──────────┘
+                   ▼
+        ┌─────────────────────┐
+        │ Physical Hardware   │
+        └─────────────────────┘
+```
+
+This creates a progression from software-only validation toward hardware deployment.
+
+---
+
+# 18. Build and Test
 
 From the repository root:
 
 ```bash
-# Full host regression + peripheral bridge + optional ARM/QEMU build
-bash scripts/run_all_tests.sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build
+ctest --test-dir build --output-on-failure
 ```
 
-The regression portion can also be run directly:
+Run the complete regression:
+
+```bash
+./scripts/run_all_tests.sh
+```
+
+Or:
 
 ```bash
 python3 scripts/regression.py
 ```
 
-For the host C/C++ layer only:
-
-```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
-cmake --build build
-ctest --test-dir build --output-on-failure
-```
-
-For the independent Python peripheral layer:
+Run the Python peripheral tests independently:
 
 ```bash
 python3 -m pytest -q peripheral-sim/tests
 ```
 
-For the standalone sensor-driver smoke tests:
+Run individual sensor-driver tests:
 
 ```bash
 make -C tests/qemu_icm42688 run
@@ -268,84 +769,330 @@ make -C tests/qemu_bmp388 run
 make -C tests/qemu_hmc5883l run
 ```
 
-If the ARM toolchain and QEMU are installed, the complete script additionally builds the firmware demo:
+Build the Cortex-M firmware:
 
 ```bash
 make -C backends/qemu-cortex-m/demo
 ```
 
-The QEMU boot/debug workflow and its machine limitations are documented in `backends/qemu-cortex-m/README.md`.
+The ARM/QEMU step requires:
 
-### Option B — dashboard validation
+```text
+arm-none-eabi-gcc
+qemu-system-arm
+```
 
-Start the local dashboard from the repository root:
+---
+
+# 19. QEMU Debugging
+
+The firmware can be executed under QEMU:
 
 ```bash
-./dashboard/run_dashboard.sh
+cd backends/qemu-cortex-m/demo
+
+qemu-system-arm \
+    -M stm32vldiscovery \
+    -nographic \
+    -kernel boot_demo.elf
 ```
 
-Then open:
+For GDB debugging:
+
+### Terminal 1
+
+```bash
+qemu-system-arm \
+    -M stm32vldiscovery \
+    -nographic \
+    -kernel boot_demo.elf \
+    -S \
+    -gdb tcp::1234
+```
+
+### Terminal 2
+
+```bash
+gdb-multiarch boot_demo.elf
+```
+
+Then:
+
+```gdb
+target remote :1234
+break main
+continue
+break ICM42688_Init
+continue
+bt
+info locals
+info args
+```
+
+This allows source-level debugging of the embedded driver execution.
+
+---
+
+# 20. Validation Architecture
+
+The project has multiple independent validation layers:
 
 ```text
-http://127.0.0.1:8765
+                         ANSA / AVHP
+                              │
+             ┌────────────────┼────────────────┐
+             │                │                │
+             ▼                ▼                ▼
+       Host C Tests      Python Tests       QEMU Build
+             │                │                │
+             ▼                ▼                ▼
+           CTest            Pytest         ARM GCC
+             │                │                │
+             └────────────────┼────────────────┘
+                              ▼
+                    Regression Validation
 ```
 
-Press **Run Full Validation**. The browser shows the live execution log and summarizes the real results returned by `scripts/run_all_tests.sh`.
+The layers have different purposes:
 
-The dashboard has four validation metrics:
+| Layer             | Purpose                                    |
+| ----------------- | ------------------------------------------ |
+| CTest             | Host-side C/C++ validation                 |
+| Pytest            | Python peripheral-model validation         |
+| Socket bridge     | Sensor register communication verification |
+| QEMU              | Embedded firmware execution                |
+| GDB               | Embedded debugging                         |
+| Physical hardware | Final hardware validation                  |
 
-| Dashboard metric | Source of truth | Meaning |
-|---|---|---|
-| CTest | CTest output from `scripts/regression.py` | Host C/C++ test suite result |
-| Pytest | `peripheral-sim/tests` pytest output | Python register-model verification |
-| Bridge | `regression.py` socket identity checks | JSON-lines SPI/I2C verification transport |
-| QEMU Build | `run_all_tests.sh` ARM build step | ARM firmware build, when required tools exist |
+---
 
-### Dashboard architecture and data flow
+# 21. Current Verification
+
+The current delivery has been validated through:
 
 ```text
-┌───────────────────────┐
-│ Browser Dashboard     │
-│ HTML / CSS / JS       │
-└───────────┬───────────┘
-            │ HTTP / JSON polling
-            ▼
-┌───────────────────────┐
-│ dashboard/server.py   │
-│ Local Python server   │
-└───────────┬───────────┘
-            │ starts subprocess
-            ▼
-┌───────────────────────┐
-│ scripts/run_all_tests │
-│ Existing orchestrator │
-└───────────┬───────────┘
-            │
-     ┌──────┴───────────────┐
-     ▼                      ▼
-┌──────────────┐     ┌──────────────────┐
-│ regression.py│     │ ARM/QEMU demo     │
-└──────┬───────┘     │ build (optional)  │
-       │             └──────────────────┘
- ┌─────┼───────────┐
- ▼     ▼           ▼
-CMake CTest     pytest + bridge
- │                 │
- ▼                 ▼
-Host tests     Python sensor models
-               ICM-42688 / BMP388 /
-               HMC5883L
+CTest
+7 / 7 tests passing
+
+Pytest
+20 / 20 tests passing
+
+Peripheral socket bridge
+PASS
 ```
 
-The browser never directly executes compiler or test commands. `dashboard/server.py` is the controlled local orchestration boundary, while `scripts/run_all_tests.sh` remains the canonical validation entry point. This keeps terminal CI/reproducibility and the presentation dashboard aligned.
+The ARM/QEMU validation depends on the local environment providing:
 
-### Dashboard scope boundary
+```text
+arm-none-eabi-gcc
+qemu-system-arm
+```
 
-The dashboard visualizes two different but complementary simulation/validation layers:
+If these tools are unavailable, the host and Python validation can still be executed independently.
 
-- **Cortex-M/QEMU:** CPU firmware build, boot and debugging path. Stock QEMU does not provide the physical flight-sensor models used by the Python layer.
-- **Python peripheral simulation:** register-level ICM-42688-P, BMP388 and HMC5883L models plus the JSON-lines socket verification transport.
+---
 
-Therefore a dashboard card showing `ICM-42688-P → WHO_AM_I 0x47` represents the Python peripheral model/bridge verification, not a claim that a physical ICM-42688 is attached to stock QEMU SPI.
+# 22. Important Scope Boundary
 
-For the complete dashboard implementation details, see `dashboard/README.md`.
+ANSA/AVHP is designed as a broader multi-stage virtual hardware platform.
+
+The repository contains the architectural foundation for the larger AVHP roadmap, while the concrete S09 implementation focuses on the flight-sensor driver stack and the Stage 0–4 foundation.
+
+The current S09 implementation includes:
+
+* ICM-42688-P driver
+* BMP388 driver
+* HMC5883L driver
+* HAL interfaces
+* Null backend
+* Virtual backend foundation
+* Cortex-M firmware environment
+* QEMU boot/debug workflow
+* Python peripheral models
+* Socket-based verification
+* Automated regression testing
+
+The following remain outside the current concrete S09 implementation:
+
+* Full hardware-accurate QEMU models for all three sensors
+* A complete serial/named-pipe connection between the Python peripheral models and QEMU firmware
+* BMP388 and HMC5883L integration into the current QEMU boot image
+* Cycle-accurate QEMU timing
+* The complete Stage 5–17 long-term AVHP roadmap
+
+These boundaries are intentionally documented so that software simulation results are not presented as physical-hardware validation.
+
+---
+
+# 23. Known Simplifications
+
+### ICM-42688 FIFO
+
+The current FIFO implementation models the relevant FIFO registers and a fixed 12-byte accelerometer + gyroscope packet.
+
+The real device supports additional FIFO packet formats and options that are not modeled here.
+
+### BMP388 Configuration
+
+The current oversampling and output-data-rate defaults are reasonable development values but should be reconsidered against the final airframe vibration and update-rate requirements.
+
+### BMP388 Calibration
+
+The host mock uses a synthetic but internally consistent calibration set.
+
+For bit-exact physical-device behavior, calibration data from the actual sensor should be used.
+
+---
+
+# 24. Design Principles
+
+The project follows several important design principles.
+
+### Hardware independence
+
+Drivers should not unnecessarily depend on a particular MCU or board.
+
+### Explicit interfaces
+
+Hardware operations are exposed through defined interfaces instead of hidden dependencies.
+
+### Testability
+
+Every hardware-facing component should have a way to be exercised without requiring physical hardware wherever practical.
+
+### Reproducibility
+
+Build and test operations should be executable through documented commands and automated scripts.
+
+### Clear simulation boundaries
+
+Software simulation results must not be presented as physical-hardware measurements.
+
+### Replaceable backends
+
+A HAL interface should be implementable by multiple backends without rewriting the higher-level driver.
+
+---
+
+# 25. Using ANSA/AVHP in a New Embedded Project
+
+A new project can use the platform following this general pattern:
+
+```text
+1. Define hardware abstraction
+          ↓
+2. Implement device driver
+          ↓
+3. Connect driver to HAL
+          ↓
+4. Create host/mock backend
+          ↓
+5. Write automated tests
+          ↓
+6. Add virtual peripheral model
+          ↓
+7. Integrate with embedded firmware
+          ↓
+8. Execute under QEMU where supported
+          ↓
+9. Debug with GDB
+          ↓
+10. Validate on physical hardware
+```
+
+This allows much of the software development and validation to happen before the final hardware is available.
+
+---
+
+# 26. Documentation
+
+Important project documentation is available under:
+
+```text
+docs/
+```
+
+Architecture:
+
+```text
+docs/architecture.md
+```
+
+Architectural decisions:
+
+```text
+docs/adr/
+```
+
+Coding standards:
+
+```text
+docs/coding-standards.md
+```
+
+HAL compliance checklist:
+
+```text
+docs/hal-compliance-checklist.md
+```
+
+QEMU documentation:
+
+```text
+backends/qemu-cortex-m/README.md
+```
+
+Python peripheral simulation:
+
+```text
+peripheral-sim/README.md
+```
+
+Project completion and verification:
+
+```text
+PROJECT_COMPLETION.md
+```
+
+---
+
+# 27. Summary
+
+ANSA/AVHP provides a structured software environment for developing hardware-facing embedded software with reduced dependence on physical hardware.
+
+Its central architecture is:
+
+```text
+Application
+     │
+     ▼
+Driver
+     │
+     ▼
+HAL
+     │
+     ▼
+Backend
+     │
+     ├── Physical Hardware
+     ├── Virtual Hardware
+     └── Simulation / Mock
+```
+
+For the S09 sensor stack:
+
+```text
+ICM-42688-P ── SPI ──┐
+                     │
+BMP388 ───── SPI/I2C ├──► HAL / Bus Abstraction
+                     │
+HMC5883L ──── I2C ───┘
+                              │
+                 ┌────────────┼────────────┐
+                 ▼            ▼            ▼
+             Host Tests   Peripheral    QEMU /
+                          Simulation    Firmware
+```
+
+The result is a development workflow where sensor drivers and hardware-facing software can be designed, tested, simulated, debugged and integrated progressively—from host software to embedded firmware and finally to physical hardware.
+
